@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/HunanTV/eru-agent/logs"
-
+	"github.com/fsouza/go-dockerclient"
 	"github.com/toolkits/net"
 )
 
@@ -20,9 +20,13 @@ const (
 	DEFAULT_BR  = "eth0"
 )
 
+type DockerClient interface {
+	Stats(opts docker.StatsOptions) error
+}
+
 type Metric struct {
 	Step     time.Duration
-	Client   defines.SingleConnRpcClient
+	Client   SingleConnRpcClient
 	Tag      string
 	Endpoint string
 
