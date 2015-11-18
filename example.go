@@ -14,7 +14,11 @@ func main() {
 	cert := "/Users/CMGS/.docker/machine/machines/default/cert.pem"
 	key := "/Users/CMGS/.docker/machine/machines/default/key.pem"
 	ca := "/Users/CMGS/.docker/machine/machines/default/ca.pem"
-	dockerclient, _ := docker.NewTLSClient("tcp://192.168.99.100:2376", cert, key, ca)
+	dockerclient, err := docker.NewTLSClient("tcp://192.168.99.100:2376", cert, key, ca)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 	client := falcon.CreateRPCClient("10.200.8.37:8433", time.Duration(5))
 	metric := falcon.CreateMetric(time.Duration(30)*time.Second, client, "a=b,b=c", "test_endpoint")
 
