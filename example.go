@@ -23,8 +23,8 @@ func main() {
 	metric := falcon.CreateMetric(time.Duration(30)*time.Second, client, "a=b,b=c", "test_endpoint")
 
 	// Get container pid from docker inspect
-	pid := 4330
-	cid := "eb622e78de3f"
+	pid := 5936
+	cid := "17370fa463b5"
 
 	if err := metric.InitMetric(dockerclient, cid, pid); err != nil {
 		// init failed

@@ -42,7 +42,7 @@ func (self *Metric) UpdateStats(client DockerClient, cid string) (map[string]uin
 
 	stats := &docker.Stats{}
 	select {
-	case stats := <-statsChan:
+	case stats = <-statsChan:
 		if stats == nil {
 			return info, errors.New("Get stats failed")
 		}
