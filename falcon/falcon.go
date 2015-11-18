@@ -10,12 +10,3 @@ func CreateRPCClient(transfer string, timeout time.Duration) SingleConnRpcClient
 		Timeout:   timeout,
 	}
 }
-
-func CreateMetric(step time.Duration, client SingleConnRpcClient, tag string, endpoint string) Metric {
-	return Metric{
-		Step:     step,
-		Client:   client,
-		Tag:      tag,
-		Endpoint: endpoint,
-	}
-}

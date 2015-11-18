@@ -1,4 +1,4 @@
-package falcon
+package metric
 
 import (
 	"errors"
@@ -9,14 +9,31 @@ import (
 
 	"github.com/HunanTV/eru-agent/logs"
 	"github.com/fsouza/go-dockerclient"
-	"github.com/open-falcon/common/model"
 )
 
-func (self *Metric) InitMetric(client DockerClient, cid string, pid int) (err error) {
-	if self.statFile, err = os.Open(fmt.Sprintf("/proc/%d/net/dev", pid)); err != nil {
-		return
+func SetMetricConfig(timeout, force time.Duration, vlanPrefix, defaultBR string) {
+	STATS_TIMEOUT = timeout
+	STATS_FORCE_DONE = force
+	VLAN_PREFIX = vlanPrefix
+	DEFAULT_BR = defaultBR
+}
+
+func CreateMetric(step time.Duration, client Remote, tag string, endpoint string) Metric {
+	return Metric{
+		Step:     step,
+		Client:   client,
+		Tag:      tag,
+		Endpoint: endpoint,
 	}
-	if info, err := self.UpdateStats(client, cid); err == nil {
+}
+
+func (self *Metric) InitMetric(client DockerClient, cid string, pid int) (err error) {
+	//if self.statFile, err = os.Open(fmt.Sprintf("/proc/%d/net/dev", pid)); err != nil {
+	//	return
+	//}
+	self.statFile, _ = os.Open("/tmp/1")
+	var info map[string]uint64
+	if info, err = self.UpdateStats(client, cid); err == nil {
 		self.Last = time.Now()
 		self.SaveLast(info)
 	}
@@ -40,7 +57,7 @@ func (self *Metric) UpdateStats(client DockerClient, cid string) (map[string]uin
 		}
 	}()
 
-	stats := &docker.Stats{}
+	var stats *docker.Stats = nil
 	select {
 	case stats = <-statsChan:
 		if stats == nil {
@@ -92,28 +109,7 @@ func (self *Metric) CalcRate(info map[string]uint64, now time.Time) (rate map[st
 }
 
 func (self *Metric) Send(rate map[string]float64) error {
-	data := []*model.MetricValue{}
-	for k, d := range rate {
-		data = append(data, self.newMetricValue(k, d))
-	}
-	var resp model.TransferResponse
-	if err := self.Client.Call("Transfer.Update", data, &resp); err != nil {
-		return err
-	}
-	logs.Debug(data)
-	logs.Debug(self.Endpoint, self.Last, &resp)
-	return nil
-}
-
-func (self *Metric) newMetricValue(metric string, value interface{}) *model.MetricValue {
-	mv := &model.MetricValue{
-		Endpoint:  self.Endpoint,
-		Metric:    metric,
-		Value:     value,
-		Step:      int64(self.Step.Seconds()),
-		Type:      "GAUGE",
-		Tags:      self.Tag,
-		Timestamp: self.Last.Unix(),
-	}
-	return mv
+	step := int64(self.Step.Seconds())
+	timestamp := self.Last.Unix()
+	return self.Client.Send(rate, self.Endpoint, self.Tag, timestamp, step)
 }

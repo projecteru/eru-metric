@@ -5,12 +5,14 @@ import (
 	"time"
 
 	"github.com/HunanTV/eru-agent/logs"
-	"github.com/HunanTV/eru-falcon/falcon"
+	"github.com/HunanTV/eru-metric/falcon"
+	"github.com/HunanTV/eru-metric/metric"
 	"github.com/fsouza/go-dockerclient"
 )
 
 func main() {
 	logs.Mode = true
+	metric.SetMetricConfig(2, 3, "vnbe", "eth0")
 	cert := "/Users/CMGS/.docker/machine/machines/default/cert.pem"
 	key := "/Users/CMGS/.docker/machine/machines/default/key.pem"
 	ca := "/Users/CMGS/.docker/machine/machines/default/ca.pem"
@@ -20,13 +22,13 @@ func main() {
 		return
 	}
 	client := falcon.CreateRPCClient("10.200.8.37:8433", time.Duration(5))
-	metric := falcon.CreateMetric(time.Duration(30)*time.Second, client, "a=b,b=c", "test_endpoint")
+	serv := metric.CreateMetric(time.Duration(5)*time.Second, client, "a=b,b=c", "test_endpoint")
 
 	// Get container pid from docker inspect
 	pid := 5936
 	cid := "17370fa463b5"
 
-	if err := metric.InitMetric(dockerclient, cid, pid); err != nil {
+	if err := serv.InitMetric(dockerclient, cid, pid); err != nil {
 		// init failed
 		fmt.Println("failed", err)
 		return
@@ -35,18 +37,18 @@ func main() {
 	println("begin")
 	for {
 		select {
-		case now := <-time.Tick(metric.Step):
+		case now := <-time.Tick(serv.Step):
 			go func() {
-				if info, err := metric.UpdateStats(dockerclient, cid); err == nil {
+				if info, err := serv.UpdateStats(dockerclient, cid); err == nil {
 					fmt.Println(info)
-					rate := metric.CalcRate(info, now)
-					metric.SaveLast(info)
+					rate := serv.CalcRate(info, now)
+					serv.SaveLast(info)
 					// for safe
 					fmt.Println(rate)
-					go metric.Send(rate)
+					go serv.Send(rate)
 				}
 			}()
-		case <-metric.Stop:
+		case <-serv.Stop:
 			return
 		}
 	}

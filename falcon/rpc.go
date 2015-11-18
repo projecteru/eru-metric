@@ -3,39 +3,13 @@ package falcon
 import (
 	"math"
 	"net/rpc"
-	"os"
 	"sync"
 	"time"
 
 	"github.com/HunanTV/eru-agent/logs"
-	"github.com/fsouza/go-dockerclient"
+	"github.com/open-falcon/common/model"
 	"github.com/toolkits/net"
 )
-
-const (
-	STATS_TIMEOUT    = 2
-	STATS_FORCE_DONE = 3
-
-	VLAN_PREFIX = "vnbe"
-	DEFAULT_BR  = "eth0"
-)
-
-type DockerClient interface {
-	Stats(opts docker.StatsOptions) error
-}
-
-type Metric struct {
-	Step     time.Duration
-	Client   SingleConnRpcClient
-	Tag      string
-	Endpoint string
-
-	statFile *os.File
-	Last     time.Time
-
-	Stop chan bool
-	Save map[string]uint64
-}
 
 type SingleConnRpcClient struct {
 	sync.Mutex
@@ -81,7 +55,6 @@ func (self *SingleConnRpcClient) insureConn() error {
 }
 
 func (self *SingleConnRpcClient) Call(method string, args interface{}, reply interface{}) error {
-
 	self.Lock()
 	defer self.Unlock()
 
@@ -109,4 +82,33 @@ func (self *SingleConnRpcClient) Call(method string, args interface{}, reply int
 	}
 
 	return nil
+}
+
+func (self SingleConnRpcClient) Send(data map[string]float64, endpoint, tag string, timestamp, step int64) error {
+	metrics := []*model.MetricValue{}
+	var metric *model.MetricValue
+	for k, d := range data {
+		metric = self.newMetricValue(k, d, endpoint, tag, timestamp, step)
+		metrics = append(metrics, metric)
+	}
+	var resp model.TransferResponse
+	if err := self.Call("Transfer.Update", metrics, &resp); err != nil {
+		return err
+	}
+	logs.Debug(data)
+	logs.Debug(endpoint, timestamp, &resp)
+	return nil
+}
+
+func (self SingleConnRpcClient) newMetricValue(metric string, value interface{}, endpoint, tag string, timestamp, step int64) *model.MetricValue {
+	mv := &model.MetricValue{
+		Endpoint:  endpoint,
+		Metric:    metric,
+		Value:     value,
+		Step:      step,
+		Type:      "GAUGE",
+		Tags:      tag,
+		Timestamp: timestamp,
+	}
+	return mv
 }

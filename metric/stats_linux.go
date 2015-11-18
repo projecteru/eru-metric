@@ -1,4 +1,4 @@
-package falcon
+package metric
 
 import (
 	"bufio"
