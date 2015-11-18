@@ -21,7 +21,7 @@ func main() {
 		fmt.Println(err)
 		return
 	}
-	client := falcon.CreateRPCClient("10.200.8.37:8433", time.Duration(5))
+	client := falcon.CreateFalconClient("10.200.8.37:8433", time.Duration(5))
 	serv := metric.CreateMetric(time.Duration(5)*time.Second, client, "a=b,b=c", "test_endpoint")
 
 	// Get container pid from docker inspect
