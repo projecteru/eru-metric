@@ -14,18 +14,20 @@ import (
 func main() {
 	var dockerAddr string
 	var transferAddr string
+	var certDir string
 	flag.BoolVar(&logs.Mode, "DEBUG", false, "enable debug")
 	flag.StringVar(&dockerAddr, "d", "tcp://192.168.99.100:2376", "docker daemon addr")
-	flag.StringVar(&transferAddr, "t", "10.200.8.37:8433", "transferAddr")
+	flag.StringVar(&transferAddr, "t", "10.200.8.37:8433", "transfer addr")
+	flag.StringVar(&certDir, "c", "/root/.docker", "cert files dir")
 	flag.Parse()
 	if flag.NArg() < 1 {
 		fmt.Println("need at least one container id")
 		return
 	}
 
-	cert := "/Users/CMGS/.docker/machine/machines/default/cert.pem"
-	key := "/Users/CMGS/.docker/machine/machines/default/key.pem"
-	ca := "/Users/CMGS/.docker/machine/machines/default/ca.pem"
+	cert := fmt.Sprintf("%s/cert.pem", certDir)
+	key := fmt.Sprintf("%s/key.pem", certDir)
+	ca := fmt.Sprintf("%s/ca.pem", certDir)
 	dockerclient, err := docker.NewTLSClient(dockerAddr, cert, key, ca)
 	if err != nil {
 		fmt.Println(err)
@@ -33,7 +35,7 @@ func main() {
 	}
 
 	metric.SetGlobalSetting(dockerclient, 2, 3, "vnbe", "eth0")
-	client := falcon.CreateFalconClient(transferAddr, time.Duration(5))
+	client := falcon.CreateFalconClient(transferAddr, 5*time.Millisecond)
 
 	for i := 0; i < flag.NArg(); i++ {
 		if c, err := dockerclient.InspectContainer(flag.Arg(i)); err != nil {
