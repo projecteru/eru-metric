@@ -7,12 +7,6 @@ import (
 	"github.com/fsouza/go-dockerclient"
 )
 
-var STATS_TIMEOUT time.Duration = 2
-var STATS_FORCE_DONE time.Duration = 3
-
-var VLAN_PREFIX string = "vnbe"
-var DEFAULT_BR string = "eth0"
-
 type DockerClient interface {
 	Stats(opts docker.StatsOptions) error
 }
@@ -33,3 +27,13 @@ type Metric struct {
 	Stop chan bool
 	Save map[string]uint64
 }
+
+type Setting struct {
+	timeout     time.Duration
+	force       time.Duration
+	vlanPrefix  string
+	defaultVlan string
+	client      DockerClient
+}
+
+var g Setting

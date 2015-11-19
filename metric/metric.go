@@ -11,11 +11,8 @@ import (
 	"github.com/fsouza/go-dockerclient"
 )
 
-func SetMetricConfig(timeout, force time.Duration, vlanPrefix, defaultBR string) {
-	STATS_TIMEOUT = timeout
-	STATS_FORCE_DONE = force
-	VLAN_PREFIX = vlanPrefix
-	DEFAULT_BR = defaultBR
+func SetGlobalSetting(client DockerClient, timeout, force time.Duration, vlanPrefix, defaultVlan string) {
+	g = Setting{timeout, force, vlanPrefix, defaultVlan, client}
 }
 
 func CreateMetric(step time.Duration, client Remote, tag string, endpoint string) Metric {
@@ -27,13 +24,13 @@ func CreateMetric(step time.Duration, client Remote, tag string, endpoint string
 	}
 }
 
-func (self *Metric) InitMetric(client DockerClient, cid string, pid int) (err error) {
+func (self *Metric) InitMetric(cid string, pid int) (err error) {
 	//if self.statFile, err = os.Open(fmt.Sprintf("/proc/%d/net/dev", pid)); err != nil {
 	//	return
 	//}
 	self.statFile, _ = os.Open("/tmp/1")
 	var info map[string]uint64
-	if info, err = self.UpdateStats(client, cid); err == nil {
+	if info, err = self.UpdateStats(cid); err == nil {
 		self.Last = time.Now()
 		self.SaveLast(info)
 	}
@@ -46,13 +43,13 @@ func (self *Metric) Exit() {
 	close(self.Stop)
 }
 
-func (self *Metric) UpdateStats(client DockerClient, cid string) (map[string]uint64, error) {
+func (self *Metric) UpdateStats(cid string) (map[string]uint64, error) {
 	info := map[string]uint64{}
 	statsChan := make(chan *docker.Stats)
 	doneChan := make(chan bool)
-	opt := docker.StatsOptions{cid, statsChan, false, doneChan, time.Duration(STATS_TIMEOUT * time.Second)}
+	opt := docker.StatsOptions{cid, statsChan, false, doneChan, g.timeout * time.Second}
 	go func() {
-		if err := client.Stats(opt); err != nil {
+		if err := g.client.Stats(opt); err != nil {
 			logs.Info("Get stats failed", cid[:12], err)
 		}
 	}()
@@ -63,7 +60,7 @@ func (self *Metric) UpdateStats(client DockerClient, cid string) (map[string]uin
 		if stats == nil {
 			return info, errors.New("Get stats failed")
 		}
-	case <-time.After(STATS_FORCE_DONE * time.Second):
+	case <-time.After(g.force * time.Second):
 		doneChan <- true
 		return info, errors.New("Get stats timeout")
 	}
@@ -98,7 +95,7 @@ func (self *Metric) CalcRate(info map[string]uint64, now time.Time) (rate map[st
 		switch {
 		case strings.HasPrefix(k, "cpu_") && d >= self.Save[k]:
 			rate[fmt.Sprintf("%s_rate", k)] = float64(d-self.Save[k]) / nano_t
-		case (strings.HasPrefix(k, VLAN_PREFIX) || strings.HasPrefix(k, DEFAULT_BR)) && d >= self.Save[k]:
+		case (strings.HasPrefix(k, g.vlanPrefix) || strings.HasPrefix(k, g.defaultVlan)) && d >= self.Save[k]:
 			rate[fmt.Sprintf("%s.rate", k)] = float64(d-self.Save[k]) / second_t
 		case strings.HasPrefix(k, "mem"):
 			rate[k] = float64(d)

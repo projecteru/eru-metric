@@ -12,7 +12,6 @@ import (
 
 func main() {
 	logs.Mode = true
-	metric.SetMetricConfig(2, 3, "vnbe", "eth0")
 	cert := "/Users/CMGS/.docker/machine/machines/default/cert.pem"
 	key := "/Users/CMGS/.docker/machine/machines/default/key.pem"
 	ca := "/Users/CMGS/.docker/machine/machines/default/ca.pem"
@@ -22,13 +21,14 @@ func main() {
 		return
 	}
 	client := falcon.CreateFalconClient("10.200.8.37:8433", time.Duration(5))
+	metric.SetGlobalSetting(dockerclient, 2, 3, "vnbe", "eth0")
 	serv := metric.CreateMetric(time.Duration(5)*time.Second, client, "a=b,b=c", "test_endpoint")
 
 	// Get container pid from docker inspect
 	pid := 5936
 	cid := "17370fa463b5"
 
-	if err := serv.InitMetric(dockerclient, cid, pid); err != nil {
+	if err := serv.InitMetric(cid, pid); err != nil {
 		// init failed
 		fmt.Println("failed", err)
 		return
@@ -39,7 +39,7 @@ func main() {
 		select {
 		case now := <-time.Tick(serv.Step):
 			go func() {
-				if info, err := serv.UpdateStats(dockerclient, cid); err == nil {
+				if info, err := serv.UpdateStats(cid); err == nil {
 					fmt.Println(info)
 					rate := serv.CalcRate(info, now)
 					serv.SaveLast(info)

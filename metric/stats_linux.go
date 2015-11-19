@@ -21,7 +21,7 @@ func (self *Metric) GetNetStats(result map[string]uint64) (err error) {
 		}
 		ts := strings.Split(text, ":")
 		fmt.Sscanf(ts[0], "%s", &name)
-		if !strings.HasPrefix(name, VLAN_PREFIX) && name != DEFAULT_BR {
+		if !strings.HasPrefix(name, g.vlanPrefix) && name != g.defaultVlan {
 			continue
 		}
 		fmt.Sscanf(ts[1],
