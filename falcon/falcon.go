@@ -25,14 +25,14 @@ type FalconClient struct {
 	Timeout   time.Duration
 }
 
-func (self FalconClient) close() {
+func (self *FalconClient) close() {
 	if self.rpcClient != nil {
 		self.rpcClient.Close()
 		self.rpcClient = nil
 	}
 }
 
-func (self FalconClient) insureConn() error {
+func (self *FalconClient) insureConn() error {
 	if self.rpcClient != nil {
 		return nil
 	}
@@ -61,7 +61,7 @@ func (self FalconClient) insureConn() error {
 	return nil
 }
 
-func (self FalconClient) call(method string, args interface{}, reply interface{}) error {
+func (self *FalconClient) call(method string, args interface{}, reply interface{}) error {
 	self.Lock()
 	defer self.Unlock()
 
@@ -87,7 +87,6 @@ func (self FalconClient) call(method string, args interface{}, reply interface{}
 			return err
 		}
 	}
-
 	return nil
 }
 
