@@ -94,28 +94,23 @@ func (self FalconClient) Call(method string, args interface{}, reply interface{}
 func (self FalconClient) Send(data map[string]float64, endpoint, tag string, timestamp, step int64) error {
 	metrics := []*model.MetricValue{}
 	var metric *model.MetricValue
-	for k, d := range data {
-		metric = self.newMetricValue(k, d, endpoint, tag, timestamp, step)
+	for k, v := range data {
+		metric = &model.MetricValue{
+			Endpoint:  endpoint,
+			Metric:    k,
+			Value:     v,
+			Step:      step,
+			Type:      "GAUGE",
+			Tags:      tag,
+			Timestamp: timestamp,
+		}
 		metrics = append(metrics, metric)
 	}
+	logs.Debug(metrics)
 	var resp model.TransferResponse
 	if err := self.Call("Transfer.Update", metrics, &resp); err != nil {
 		return err
 	}
-	logs.Debug(data)
 	logs.Debug(endpoint, timestamp, &resp)
 	return nil
-}
-
-func (self FalconClient) newMetricValue(metric string, value interface{}, endpoint, tag string, timestamp, step int64) *model.MetricValue {
-	mv := &model.MetricValue{
-		Endpoint:  endpoint,
-		Metric:    metric,
-		Value:     value,
-		Step:      step,
-		Type:      "GAUGE",
-		Tags:      tag,
-		Timestamp: timestamp,
-	}
-	return mv
 }
