@@ -1,6 +1,8 @@
 Eru-Metric
 ==========
 
+[![GoDoc](https://godoc.org/github.com/HunanTV/eru-metric?status.svg)](https://godoc.org/github.com/HunanTV/eru-metric)
+
 A library for watching container metrics and send to remote.
 
 This repo implement open-falcon methods you can write your methods by your self.
