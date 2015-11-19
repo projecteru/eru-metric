@@ -25,10 +25,9 @@ func CreateMetric(step time.Duration, client Remote, tag string, endpoint string
 }
 
 func (self *Metric) InitMetric(cid string, pid int) (err error) {
-	//if self.statFile, err = os.Open(fmt.Sprintf("/proc/%d/net/dev", pid)); err != nil {
-	//	return
-	//}
-	self.statFile, _ = os.Open("/tmp/1")
+	if self.statFile, err = os.Open(fmt.Sprintf("/proc/%d/net/dev", pid)); err != nil {
+		return
+	}
 	var info map[string]uint64
 	if info, err = self.UpdateStats(cid); err == nil {
 		self.Last = time.Now()
@@ -73,7 +72,7 @@ func (self *Metric) UpdateStats(cid string) (map[string]uint64, error) {
 	info["mem_max_usage"] = stats.MemoryStats.MaxUsage
 	info["mem_rss"] = stats.MemoryStats.Stats.Rss
 
-	if err := self.GetNetStats(info); err != nil {
+	if err := self.getNetStats(info); err != nil {
 		return info, err
 	}
 	return info, nil

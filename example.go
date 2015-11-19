@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"time"
 
@@ -11,30 +12,49 @@ import (
 )
 
 func main() {
-	logs.Mode = true
+	var dockerAddr string
+	var transferAddr string
+	flag.BoolVar(&logs.Mode, "DEBUG", false, "enable debug")
+	flag.StringVar(&dockerAddr, "d", "tcp://192.168.99.100:2376", "docker daemon addr")
+	flag.StringVar(&transferAddr, "t", "10.200.8.37:8433", "transferAddr")
+	flag.Parse()
+	if flag.NArg() < 1 {
+		fmt.Println("need at least one container id")
+		return
+	}
+
 	cert := "/Users/CMGS/.docker/machine/machines/default/cert.pem"
 	key := "/Users/CMGS/.docker/machine/machines/default/key.pem"
 	ca := "/Users/CMGS/.docker/machine/machines/default/ca.pem"
-	dockerclient, err := docker.NewTLSClient("tcp://192.168.99.100:2376", cert, key, ca)
+	dockerclient, err := docker.NewTLSClient(dockerAddr, cert, key, ca)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	client := falcon.CreateFalconClient("10.200.8.37:8433", time.Duration(5))
+
 	metric.SetGlobalSetting(dockerclient, 2, 3, "vnbe", "eth0")
-	serv := metric.CreateMetric(time.Duration(5)*time.Second, client, "a=b,b=c", "test_endpoint")
+	client := falcon.CreateFalconClient(transferAddr, time.Duration(5))
 
-	// Get container pid from docker inspect
-	pid := 5936
-	cid := "17370fa463b5"
+	for i := 0; i < flag.NArg(); i++ {
+		if c, err := dockerclient.InspectContainer(flag.Arg(i)); err != nil {
+			fmt.Println(flag.Arg(i), err)
+			continue
+		} else {
+			go start_watcher(client, c.ID, c.State.Pid)
+		}
+	}
+	for {
+	}
+}
 
+func start_watcher(client metric.Remote, cid string, pid int) {
+	serv := metric.CreateMetric(time.Duration(5)*time.Second, client, "a=b,b=c", fmt.Sprintf("test_%s", cid))
 	if err := serv.InitMetric(cid, pid); err != nil {
-		// init failed
 		fmt.Println("failed", err)
 		return
 	}
 
-	println("begin")
+	fmt.Println("begin watch", cid)
 	for {
 		select {
 		case now := <-time.Tick(serv.Step):

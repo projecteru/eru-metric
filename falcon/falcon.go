@@ -25,7 +25,7 @@ type FalconClient struct {
 	Timeout   time.Duration
 }
 
-func (self FalconClient) Close() {
+func (self FalconClient) close() {
 	if self.rpcClient != nil {
 		self.rpcClient.Close()
 		self.rpcClient = nil
@@ -61,7 +61,7 @@ func (self FalconClient) insureConn() error {
 	return nil
 }
 
-func (self FalconClient) Call(method string, args interface{}, reply interface{}) error {
+func (self FalconClient) call(method string, args interface{}, reply interface{}) error {
 	self.Lock()
 	defer self.Unlock()
 
@@ -80,10 +80,10 @@ func (self FalconClient) Call(method string, args interface{}, reply interface{}
 	select {
 	case <-time.After(timeout):
 		logs.Info("Metrics rpc call timeout", self.rpcClient, self.RpcServer)
-		self.Close()
+		self.close()
 	case err := <-done:
 		if err != nil {
-			self.Close()
+			self.close()
 			return err
 		}
 	}
@@ -108,7 +108,7 @@ func (self FalconClient) Send(data map[string]float64, endpoint, tag string, tim
 	}
 	logs.Debug(metrics)
 	var resp model.TransferResponse
-	if err := self.Call("Transfer.Update", metrics, &resp); err != nil {
+	if err := self.call("Transfer.Update", metrics, &resp); err != nil {
 		return err
 	}
 	logs.Debug(endpoint, timestamp, &resp)

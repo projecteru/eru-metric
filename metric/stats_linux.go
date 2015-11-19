@@ -8,7 +8,7 @@ import (
 	"github.com/HunanTV/eru-agent/logs"
 )
 
-func (self *Metric) GetNetStats(result map[string]uint64) (err error) {
+func (self *Metric) getNetStats(result map[string]uint64) (err error) {
 	s := bufio.NewScanner(self.statFile)
 	defer self.statFile.Seek(0, 0)
 	var d uint64
