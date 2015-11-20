@@ -21,6 +21,7 @@ func CreateMetric(step time.Duration, client Remote, tag string, endpoint string
 		Client:   client,
 		Tag:      tag,
 		Endpoint: endpoint,
+		Stop:     make(chan bool),
 	}
 }
 
