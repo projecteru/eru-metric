@@ -62,7 +62,7 @@ func start_watcher(client metric.Remote, cid string, pid int) {
 	fmt.Println("begin watch", cid)
 	for {
 		select {
-		case now := t.C:
+		case now := <-t.C:
 			go func() {
 				if info, err := serv.UpdateStats(cid); err == nil {
 					fmt.Println(info)
