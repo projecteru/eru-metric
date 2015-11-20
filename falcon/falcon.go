@@ -11,8 +11,8 @@ import (
 	"github.com/toolkits/net"
 )
 
-func CreateFalconClient(transfer string, timeout time.Duration) FalconClient {
-	return FalconClient{
+func CreateFalconClient(transfer string, timeout time.Duration) *FalconClient {
+	return &FalconClient{
 		RpcServer: transfer,
 		Timeout:   timeout,
 	}
@@ -25,11 +25,12 @@ type FalconClient struct {
 	Timeout   time.Duration
 }
 
-func (self *FalconClient) close() {
+func (self *FalconClient) Close() error {
 	if self.rpcClient != nil {
 		self.rpcClient.Close()
 		self.rpcClient = nil
 	}
+	return nil
 }
 
 func (self *FalconClient) insureConn() error {
@@ -80,17 +81,17 @@ func (self *FalconClient) call(method string, args interface{}, reply interface{
 	select {
 	case <-time.After(timeout):
 		logs.Info("Metrics rpc call timeout", self.rpcClient, self.RpcServer)
-		self.close()
+		self.Close()
 	case err := <-done:
 		if err != nil {
-			self.close()
+			self.Close()
 			return err
 		}
 	}
 	return nil
 }
 
-func (self FalconClient) Send(data map[string]float64, endpoint, tag string, timestamp, step int64) error {
+func (self *FalconClient) Send(data map[string]float64, endpoint, tag string, timestamp, step int64) error {
 	metrics := []*model.MetricValue{}
 	var metric *model.MetricValue
 	for k, v := range data {

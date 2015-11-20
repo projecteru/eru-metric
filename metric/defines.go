@@ -13,6 +13,7 @@ type DockerClient interface {
 
 type Remote interface {
 	Send(data map[string]float64, endpoint, tag string, timestamp, step int64) error
+	Close() error
 }
 
 type Metric struct {

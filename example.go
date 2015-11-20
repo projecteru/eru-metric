@@ -51,6 +51,7 @@ func main() {
 
 func start_watcher(client metric.Remote, cid string, pid int) {
 	serv := metric.CreateMetric(time.Duration(5)*time.Second, client, "a=b,b=c", fmt.Sprintf("test_%s", cid))
+	defer serv.Client.Close()
 	if err := serv.InitMetric(cid, pid); err != nil {
 		fmt.Println("failed", err)
 		return
