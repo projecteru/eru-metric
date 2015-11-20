@@ -57,10 +57,12 @@ func start_watcher(client metric.Remote, cid string, pid int) {
 		return
 	}
 
+	t := time.NewTicker(serv.Step)
+	defer t.Stop()
 	fmt.Println("begin watch", cid)
 	for {
 		select {
-		case now := <-time.Tick(serv.Step):
+		case now := t.C:
 			go func() {
 				if info, err := serv.UpdateStats(cid); err == nil {
 					fmt.Println(info)
