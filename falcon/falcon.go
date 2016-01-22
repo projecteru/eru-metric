@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/HunanTV/eru-agent/logs"
+	"github.com/projecteru/eru-agent/logs"
 	"github.com/open-falcon/common/model"
 	"github.com/toolkits/net"
 )

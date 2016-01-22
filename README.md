@@ -1,7 +1,7 @@
 Eru-Metric
 ==========
 
-[![GoDoc](https://godoc.org/github.com/HunanTV/eru-metric?status.svg)](https://godoc.org/github.com/HunanTV/eru-metric)
+[![GoDoc](https://godoc.org/github.com/projecteru/eru-metric?status.svg)](https://godoc.org/github.com/projecteru/eru-metric)
 
 A library for watching container metrics and send to remote.
 

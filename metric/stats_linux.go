@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/HunanTV/eru-agent/logs"
+	"github.com/projecteru/eru-agent/logs"
 )
 
 func (self *Metric) getNetStats(result map[string]uint64) (err error) {

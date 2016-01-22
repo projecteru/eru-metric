@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/HunanTV/eru-agent/logs"
+	"github.com/projecteru/eru-agent/logs"
 	"github.com/fsouza/go-dockerclient"
 )
 

@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/HunanTV/eru-agent/logs"
-	"github.com/HunanTV/eru-metric/falcon"
-	"github.com/HunanTV/eru-metric/metric"
+	"github.com/projecteru/eru-agent/logs"
+	"github.com/projecteru/eru-metric/falcon"
+	"github.com/projecteru/eru-metric/metric"
 	"github.com/fsouza/go-dockerclient"
 )
 
