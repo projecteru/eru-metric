@@ -2,7 +2,6 @@ package statsd
 
 import (
 	"fmt"
-	"strconv"
 	"sync"
 
 	statsdlib "github.com/cactus/go-statsd-client/statsd"
@@ -31,7 +30,7 @@ func (self *StatsDClient) Send(data map[string]float64, endpoint, tag string, ti
 	}
 	for k, v := range data {
 		key := fmt.Sprintf("%s.%s.%s", endpoint, tag, k)
-		remote.Raw(key, strconv.FormatFloat(v, 'f', -1, 64), 1.0)
+		remote.Raw(key, fmt.Sprintf("%v", v), 1.0)
 	}
 	return nil
 }
