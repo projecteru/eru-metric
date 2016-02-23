@@ -22,9 +22,9 @@ func (self *StatsDClient) Close() error {
 }
 
 func (self *StatsDClient) Send(data map[string]float64, endpoint, tag string, timestamp, step int64) error {
-	remote, err := statsdlib.New("addr")
+	remote, err := statsdlib.New(self.Addr)
 	if err != nil {
-		logs.Info("Connect statsd failed")
+		logs.Info("Connect statsd failed", err)
 		return err
 	}
 	defer remote.Close()
