@@ -30,7 +30,7 @@ func (self *StatsDClient) Send(data map[string]float64, endpoint, tag string, ti
 	defer remote.Close()
 	defer remote.Flush()
 	for k, v := range data {
-		key := fmt.Sprintf("%s.%s.%s", endpoint, tag, k)
+		key := fmt.Sprintf("eru.%s.%s.%s", endpoint, tag, k)
 		remote.Gauge(key, v)
 	}
 	return nil
