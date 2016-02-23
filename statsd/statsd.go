@@ -2,9 +2,9 @@ package statsd
 
 import (
 	"fmt"
-	"sync"
 
-	statsdlib "github.com/cactus/go-statsd-client/statsd"
+	statsdlib "github.com/CMGS/statsd"
+	"github.com/projecteru/eru-agent/logs"
 )
 
 func CreateStatsDClient(addr string) *StatsDClient {
@@ -14,7 +14,6 @@ func CreateStatsDClient(addr string) *StatsDClient {
 }
 
 type StatsDClient struct {
-	sync.Mutex
 	Addr string
 }
 
@@ -23,14 +22,16 @@ func (self *StatsDClient) Close() error {
 }
 
 func (self *StatsDClient) Send(data map[string]float64, endpoint, tag string, timestamp, step int64) error {
-	remote, err := statsdlib.NewClient(self.Addr, "")
-	defer remote.Close()
+	remote, err := statsdlib.New("addr")
 	if err != nil {
+		logs.Info("Connect statsd failed")
 		return err
 	}
+	defer remote.Close()
+	defer remote.Flush()
 	for k, v := range data {
 		key := fmt.Sprintf("%s.%s.%s", endpoint, tag, k)
-		remote.Raw(key, fmt.Sprintf("%v", v), 1.0)
+		remote.Gauge(key, v)
 	}
 	return nil
 }
