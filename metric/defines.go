@@ -2,6 +2,7 @@ package metric
 
 import (
 	"os"
+	"sync"
 	"time"
 
 	"github.com/fsouza/go-dockerclient"
@@ -17,6 +18,7 @@ type Remote interface {
 }
 
 type Metric struct {
+	*sync.Mutex
 	Step     time.Duration
 	Client   Remote
 	Tag      string

@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/projecteru/eru-agent/logs"
 	"github.com/fsouza/go-dockerclient"
+	"github.com/projecteru/eru-agent/logs"
 )
 
 func SetGlobalSetting(client DockerClient, timeout, force time.Duration, vlanPrefix, defaultVlan string) {
@@ -80,6 +80,8 @@ func (self *Metric) UpdateStats(cid string) (map[string]uint64, error) {
 }
 
 func (self *Metric) SaveLast(info map[string]uint64) {
+	self.Lock()
+	defer self.Unlock()
 	self.Save = map[string]uint64{}
 	for k, d := range info {
 		self.Save[k] = d
