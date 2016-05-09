@@ -18,7 +18,7 @@ type Remote interface {
 }
 
 type Metric struct {
-	*sync.Mutex
+	sync.Mutex
 	Step     time.Duration
 	Client   Remote
 	Tag      string
