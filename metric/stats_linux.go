@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/projecteru/eru-agent/logs"
+	log "github.com/Sirupsen/logrus"
 )
 
 func (self *Metric) getNetStats(result map[string]uint64) (err error) {
@@ -38,6 +38,6 @@ func (self *Metric) getNetStats(result map[string]uint64) (err error) {
 		result[name+".outerrs"] = n[6]
 		result[name+".outdrop"] = n[7]
 	}
-	logs.Debug("Container net status", result)
+	log.Debugf("Container net status %v", result)
 	return
 }

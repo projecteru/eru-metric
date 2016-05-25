@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/fsouza/go-dockerclient"
-	"github.com/projecteru/eru-agent/logs"
+	"golang.org/x/net/context"
+
+	log "github.com/Sirupsen/logrus"
+	"github.com/docker/engine-api/client"
 	"github.com/projecteru/eru-metric/metric"
 	"github.com/projecteru/eru-metric/statsd"
 )
@@ -14,31 +16,27 @@ import (
 func main() {
 	var dockerAddr string
 	var transferAddr string
-	var certDir string
-	flag.BoolVar(&logs.Mode, "DEBUG", false, "enable debug")
+	var debug bool
+	flag.BoolVar(&debug, "DEBUG", false, "enable debug")
 	flag.StringVar(&dockerAddr, "d", "tcp://192.168.99.100:2376", "docker daemon addr")
 	flag.StringVar(&transferAddr, "t", "10.200.8.37:8433", "transfer addr")
-	flag.StringVar(&certDir, "c", "/root/.docker", "cert files dir")
 	flag.Parse()
 	if flag.NArg() < 1 {
 		fmt.Println("need at least one container id")
 		return
 	}
-
-	cert := fmt.Sprintf("%s/cert.pem", certDir)
-	key := fmt.Sprintf("%s/key.pem", certDir)
-	ca := fmt.Sprintf("%s/ca.pem", certDir)
-	dockerclient, err := docker.NewTLSClient(dockerAddr, cert, key, ca)
-	if err != nil {
-		fmt.Println(err)
-		return
+	if debug {
+		log.SetLevel(log.DebugLevel)
 	}
 
-	metric.SetGlobalSetting(dockerclient, 2, 3, "vnbe", "eth0")
+	cli, _ := client.NewEnvClient()
+
+	metric.SetGlobalSetting(cli, 2, 3, "vnbe", "eth0")
 	client := statsd.CreateStatsDClient(transferAddr)
+	ctx := context.Background()
 
 	for i := 0; i < flag.NArg(); i++ {
-		if c, err := dockerclient.InspectContainer(flag.Arg(i)); err != nil {
+		if c, err := cli.ContainerInspect(ctx, flag.Arg(i)); err != nil {
 			fmt.Println(flag.Arg(i), err)
 			continue
 		} else {

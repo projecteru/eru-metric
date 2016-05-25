@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/projecteru/eru-agent/logs"
+	log "github.com/Sirupsen/logrus"
 	"github.com/open-falcon/common/model"
 	"github.com/toolkits/net"
 )
@@ -51,7 +51,7 @@ func (self *FalconClient) insureConn() error {
 			return nil
 		}
 
-		logs.Info("Metrics rpc dial fail", err)
+		log.Errorf("Metrics rpc dial fail %s", err)
 		if retry > 5 {
 			return err
 		}
@@ -80,7 +80,7 @@ func (self *FalconClient) call(method string, args interface{}, reply interface{
 
 	select {
 	case <-time.After(timeout):
-		logs.Info("Metrics rpc call timeout", self.rpcClient, self.RpcServer)
+		log.Infof("Metrics rpc call timeout %s %s", self.rpcClient, self.RpcServer)
 		self.Close()
 	case err := <-done:
 		if err != nil {
@@ -106,11 +106,11 @@ func (self *FalconClient) Send(data map[string]float64, endpoint, tag string, ti
 		}
 		metrics = append(metrics, metric)
 	}
-	logs.Debug(metrics)
+	log.Debug(metrics)
 	var resp model.TransferResponse
 	if err := self.call("Transfer.Update", metrics, &resp); err != nil {
 		return err
 	}
-	logs.Debug(endpoint, timestamp, &resp)
+	log.Debugf("%s %s %s", endpoint, timestamp, &resp)
 	return nil
 }

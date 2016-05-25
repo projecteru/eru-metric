@@ -1,14 +1,17 @@
 package metric
 
 import (
-	"errors"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"strings"
 	"time"
 
-	"github.com/fsouza/go-dockerclient"
-	"github.com/projecteru/eru-agent/logs"
+	"github.com/docker/engine-api/types"
+	"golang.org/x/net/context"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 func SetGlobalSetting(client DockerClient, timeout, force time.Duration, vlanPrefix, defaultVlan string) {
@@ -45,33 +48,31 @@ func (self *Metric) Exit() {
 
 func (self *Metric) UpdateStats(cid string) (map[string]uint64, error) {
 	info := map[string]uint64{}
-	statsChan := make(chan *docker.Stats)
-	doneChan := make(chan bool)
-	opt := docker.StatsOptions{cid, statsChan, false, doneChan, g.timeout * time.Second}
-	go func() {
-		if err := g.client.Stats(opt); err != nil {
-			logs.Info("Get stats failed", cid[:12], err)
-		}
-	}()
-
-	var stats *docker.Stats = nil
-	select {
-	case stats = <-statsChan:
-		if stats == nil {
-			return info, errors.New("Get stats failed")
-		}
-	case <-time.After(g.force * time.Second):
-		doneChan <- true
-		return info, errors.New("Get stats timeout")
+	ctx := context.Background()
+	resp, err := g.client.ContainerStats(ctx, cid, false)
+	if err != nil {
+		log.Errorf("Get stats failed %s %s", cid[:12], err)
+		return info, err
+	}
+	defer resp.Close()
+	data, err := ioutil.ReadAll(resp)
+	if err != nil {
+		log.Errorf("Read stats failed %s %s", cid[:12], err)
+		return info, err
+	}
+	var stats types.StatsJSON
+	if err := json.Unmarshal(data, &stats); err != nil {
+		log.Errorf("Unmarshal stats failed %s %s", cid[:12], err)
+		return info, err
 	}
 
-	info["cpu_user"] = stats.CPUStats.CPUUsage.UsageInUsermode
-	info["cpu_system"] = stats.CPUStats.CPUUsage.UsageInKernelmode
-	info["cpu_usage"] = stats.CPUStats.CPUUsage.TotalUsage
+	info["cpu_user"] = stats.Stats.CPUStats.CPUUsage.UsageInUsermode
+	info["cpu_system"] = stats.Stats.CPUStats.CPUUsage.UsageInKernelmode
+	info["cpu_usage"] = stats.Stats.CPUStats.CPUUsage.TotalUsage
 	//FIXME in container it will get all CPUStats
-	info["mem_usage"] = stats.MemoryStats.Usage
-	info["mem_max_usage"] = stats.MemoryStats.MaxUsage
-	info["mem_rss"] = stats.MemoryStats.Stats.Rss
+	info["mem_usage"] = stats.Stats.MemoryStats.Usage
+	info["mem_max_usage"] = stats.Stats.MemoryStats.MaxUsage
+	info["mem_rss"] = stats.Stats.MemoryStats.Stats["rss"]
 
 	if err := self.getNetStats(info); err != nil {
 		return info, err

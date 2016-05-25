@@ -1,15 +1,16 @@
 package metric
 
 import (
+	"io"
 	"os"
 	"sync"
 	"time"
 
-	"github.com/fsouza/go-dockerclient"
+	"golang.org/x/net/context"
 )
 
 type DockerClient interface {
-	Stats(opts docker.StatsOptions) error
+	ContainerStats(ctx context.Context, containerID string, stream bool) (io.ReadCloser, error)
 }
 
 type Remote interface {
